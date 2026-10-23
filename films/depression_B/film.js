@@ -32,9 +32,10 @@ const alarmK = t => ALARMS.reduce((m, a) => Math.max(m, ss(t, a.on, a.on + .14) 
 const alarmSec = t => ALARMS.reduce((s, a) => s + clamp(t - a.on, 0, a.off - a.on), 0);
 const bump = (t, list) => list.reduce((m, p) => { const u = (t - p) / .42; return u < 0 || u > 1 ? m : Math.max(m, Math.pow(Math.sin(Math.PI * u), .7)); }, 0);
 
-const MAIN = [[830, 456], [905, 456], [960, 456], [960, 148]];
+const MAIN = [[746, 456], [830, 456], [905, 456], [960, 456], [960, 148]];
 const BL = [[960, 148], [LX, 148], [LX, 188]], BR = [[960, 148], [RX, 148], [RX, 188]];
-const WIRE_LEN = 450 + 505;
+const plen = pts => pts.reduce((s, p, i) => i ? s + Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) : 0, 0);
+const WIRE_LEN = plen(MAIN) + plen(BL);
 function sub(pts, d0, d1) {
   const out = []; let acc = 0;
   for (let i = 0; i < pts.length - 1; i++) {
@@ -57,23 +58,23 @@ function dog(fr, x, y, s, o = {}) {
   fr.g({ at: [x, y], s: [dir * s, s], rot: o.rot || 0, a }, () => {
     if (o.harness == null) fr.ellipse(lerp(4, 40, lie), 8, lerp(86, 118, lie), 11, { fill: '#000000', a: .2 });
     const by = lerp(-86, -30, lie);
+    if (o.harness != null) {
+      fr.line(-34, by - 6, -34, o.harness, { w: 7, color: '#4E5964' });
+      fr.line(34, by - 6, 34, o.harness, { w: 7, color: '#4E5964' });
+    }
     if (lie < .82) {
-      fr.rect(-62, by + 18, 16, lerp(60, 18, lie) - ext * 22, { r: 8, fill: DARK });
-      fr.rect(-38, by + 22, 14, lerp(54, 16, lie) - ext * 10, { r: 7, fill: '#A8703F' });
-      fr.rect(22, by + 16, 16, lerp(64, 18, lie) + ext * 36, { r: 8, fill: BODY });
-      fr.rect(46, by + 20, 14, lerp(58, 16, lie) + ext * 22, { r: 7, fill: LIGHT });
+      fr.rect(-68 - ext * 18, by + 18, 18, lerp(60, 18, lie) - ext * 28, { r: 8, fill: DARK });
+      fr.rect(-42 - ext * 8, by + 22, 16, lerp(54, 16, lie) - ext * 14, { r: 7, fill: '#A8703F' });
+      fr.rect(20 + ext * 10, by + 16, 18, lerp(64, 18, lie) + ext * 40, { r: 8, fill: BODY });
+      fr.rect(46 + ext * 22, by + 20, 16, lerp(58, 16, lie) + ext * 24, { r: 7, fill: LIGHT });
     } else {
       fr.ellipse(70, -6, 36, 13, { fill: '#B67C45' }); fr.ellipse(-36, -8, 48, 15, { fill: '#B67C45' });
     }
     fr.path(`M -70,${by - 2} Q ${-108 + wag * 18},${by - 36} ${-86 + wag * 26},${lerp(by - 72, by - 8, lie)}`, { color: BODY, w: 14 });
     fr.ellipse(0, by, 78, lerp(40, 26, lie), { fill: BODY });
     fr.ellipse(10, by + 12, 48, 16, { fill: LIGHT, a: .9 });
-    if (o.harness != null) {
-      fr.rect(-48, by - 6, 96, 14, { r: 6, fill: '#6C7A88' });
-      fr.line(-34, by - 6, -34, o.harness, { w: 7, color: '#4E5964' });
-      fr.line(34, by - 6, 34, o.harness, { w: 7, color: '#4E5964' });
-    }
-    const hx = lerp(68, 86, lie) + nose * 20, hy = lerp(by - 36, by - 6, lie);
+    if (o.harness != null) fr.rect(-48, by - 6, 96, 14, { r: 6, fill: '#6C7A88' });
+    const hx = lerp(68, 86, lie) + nose * 36, hy = lerp(by - 36, by - 6, lie);
     fr.ellipse(hx - 16, hy + 14, 20, 14, { fill: BODY });
     fr.circle(hx, hy, 26, { fill: BODY });
     fr.ellipse(hx + 26, hy + 8, 24, 13, { fill: SNOUT });
@@ -109,13 +110,15 @@ function plaque(fr, x, str, col, a) {
   });
 }
 function lamp(fr, cx, k, t) {
-  fr.rect(cx - 5, TOP, 10, 22, { fill: '#2B2420' });
-  fr.path(`M ${cx - 20},${TOP + 22} L ${cx + 20},${TOP + 22} L ${cx + 28},${TOP + 44} L ${cx - 28},${TOP + 44} Z`, { fill: '#2E2826' });
-  const pulse = .72 + .28 * Math.sin(t * 10);
-  fr.ellipse(cx, TOP + 68, 28, 26, { fill: k > 0 ? RED : '#5C4548' });
+  fr.rect(cx - 6, TOP, 12, 18, { fill: '#2B2420' });
+  fr.path(`M ${cx - 26},${TOP + 18} L ${cx + 26},${TOP + 18} L ${cx + 34},${TOP + 44} L ${cx - 34},${TOP + 44} Z`, { fill: '#3A3230' });
+  const pulse = .7 + .3 * Math.sin(t * 10);
   if (k > 0) {
-    fr.ellipse(cx, TOP + 68, 28, 26, { fill: '#FFD2C4', a: .55 * pulse });
-    fr.glow(cx, TOP + 68, 210, RED, .85 * k * pulse);
+    fr.ellipse(cx, TOP + 76, 36, 34, { fill: RED });
+    fr.ellipse(cx - 10, TOP + 62, 12, 9, { fill: '#FF8A78', a: .45 * pulse });
+    fr.glow(cx, TOP + 76, 260, RED, .95 * k * pulse);
+  } else {
+    fr.ellipse(cx, TOP + 76, 36, 34, { fill: '#4A3032' });
   }
 }
 function panel(fr, faceX, dirn, b) {
@@ -134,26 +137,32 @@ function harnessRoom(fr, t) {
   cabinet(fr, IR[0], IR[1], '#C8D0D6', '#8C979F');
   const k = alarmK(t), pulse = .8 + .2 * Math.sin(t * 10);
   [IL, IR].forEach(r => fr.rect(r[0], TOP, r[1] - r[0], FLOOR - TOP, { fill: RED, a: .18 * k * pulse }));
-  const WIRE = '#8E8A96';
+  const WIRE = '#8E8A96', live = ss(t, ALARMS[0].off, ALARMS[0].off + .3);
   fr.poly(MAIN, { color: WIRE, w: 8 });
   fr.poly(BL, { color: WIRE, w: 8 });
   fr.poly(BR, { color: WIRE, w: 8 });
+  if (live > 0) {
+    fr.poly(MAIN, { color: GOLD, w: 8, a: .5 * live });
+    fr.poly(BL, { color: GOLD, w: 8, a: .5 * live });
+    fr.poly(BR, { color: GOLD, w: 8, a: .5 * live });
+  }
   /* 右屋的线在墙边断开 */
-  fr.line(1090, 456, 1054, 456, { w: 8, color: WIRE });
-  fr.line(1054, 456, 1040, 442, { w: 6, color: BLUE });
-  fr.line(1054, 456, 1038, 470, { w: 6, color: BLUE });
-  const stubA = ss(t, 13.5, 14.1);
-  if (stubA > 0) fr.text('没接', 1028, 510, { font: 'sansh', size: 36, color: BLUE, a: stubA, shadow: .6 });
+  fr.line(1090, 456, 1052, 456, { w: 8, color: WIRE });
+  fr.line(1052, 456, 1034, 438, { w: 7, color: BLUE });
+  fr.line(1052, 456, 1032, 474, { w: 7, color: BLUE });
+  const stubA = ss(t, 13.5, 14.1) * (1 - ss(t, 17.7, 18.2));
+  if (stubA > 0) fr.text('没接', 1070, 534, { font: 'sansh', size: 34, color: BLUE, a: stubA, shadow: .6 });
   ALARMS.forEach(al => {
     const d = seg(t, al.press, al.press + PULSE) * WIRE_LEN, tail = Math.max(0, d - 280);
     const fade = 1 - ss(t, al.press + PULSE, al.press + PULSE + .5);
     if (t < al.press || fade <= 0) return;
-    const m = sub(MAIN, tail, Math.min(d, 450));
-    const bl = d > 450 ? sub(BL, Math.max(0, tail - 450), d - 450) : [];
-    const br = d > 450 ? sub(BR, Math.max(0, tail - 450), d - 450) : [];
+    const ml = plen(MAIN);
+    const m = sub(MAIN, tail, Math.min(d, ml));
+    const bl = d > ml ? sub(BL, Math.max(0, tail - ml), d - ml) : [];
+    const br = d > ml ? sub(BR, Math.max(0, tail - ml), d - ml) : [];
     fr.g({ a: fade }, () => {
       [m, bl, br].forEach(p => { if (p.length > 1) fr.poly(p, { color: GOLD, w: 12, add: true, glow: 16 }); });
-      [[m, d <= 450], [bl, d > 450], [br, d > 450]].forEach(([p, on]) => {
+      [[m, d <= ml], [bl, d > ml], [br, d > ml]].forEach(([p, on]) => {
         if (on && p.length > 1) { const h = p[p.length - 1]; fr.spark(h[0], h[1], 15, GOLD, 1); }
       });
     });
@@ -166,12 +175,12 @@ function harnessRoom(fr, t) {
   lamp(fr, LX, k, t); lamp(fr, RX, k, t);
   const bl_ = bump(t, PRESS_L), br_ = bump(t, PRESS_R);
   panel(fr, 714, 1, bl_); panel(fr, 1206, -1, br_);
-  const tense = k, sway = Math.sin(t * 1.6) * 2, shake = tense * Math.sin(t * 32) * 2.2;
-  const ceilL = (TOP - 648) / 1.05, ceilR = (TOP - 648) / 1.05;
-  dog(fr, 430 + shake, 648 + sway, 1.05, { harness: ceilL, nose: bl_, tense, dir: 1 });
-  dog(fr, 1490 - shake, 648 - sway, 1.05, { harness: ceilR, nose: br_, tense, dir: -1 });
-  plaque(fr, LX, '能关掉', GOLD, ss(t, 9.1, 9.7) * (1 - ss(t, 22.5, 22.95)));
-  plaque(fr, RX, '关不掉', BLUE, ss(t, 13.7, 14.3) * (1 - ss(t, 22.5, 22.95)));
+  const tense = k, sway = Math.sin(t * 1.6) * 2, shake = tense * Math.sin(t * 32) * 2.2, ds = 1.28;
+  const ceil = (TOP - 648) / ds;
+  dog(fr, 555 + shake, 648 + sway, ds, { harness: ceil, nose: bl_, tense, dir: 1 });
+  dog(fr, 1365 - shake, 648 - sway, ds, { harness: ceil, nose: br_, tense, dir: -1 });
+  plaque(fr, 268, '能关掉', GOLD, ss(t, 9.1, 9.7) * (1 - ss(t, 22.5, 22.95)));
+  plaque(fr, 1652, '关不掉', BLUE, ss(t, 13.7, 14.3) * (1 - ss(t, 22.5, 22.95)));
   const c = ss(t, 18.05, 18.6) * (1 - ss(t, 22.5, 22.95));
   if (c > 0) {
     const v = alarmSec(t).toFixed(1);
@@ -179,7 +188,7 @@ function harnessRoom(fr, t) {
       fr.rect(x - 150, 708, 300, 46, { r: 8, fill: '#16121C', a: .82 * c });
       fr.text(`警报累计 ${v} 秒`, x, 742, { font: 'sansh', size: 32, color: CREAM, a: c });
     });
-    fr.text('＝', 960, 742, { font: 'sansh', size: 56, color: GOLD, a: c * ss(t, 20.3, 20.85), glow: 10, glowColor: GOLD });
+    fr.text('＝', 960, 744, { font: 'sansh', size: 64, color: GOLD, a: c * ss(t, 20.3, 20.85), glow: 14, glowColor: GOLD });
     fr.text('累计秒数为示意', 960, 788, { font: 'sans', size: 22, color: '#B9AFA0', a: c * .85 });
   }
 }
@@ -204,16 +213,16 @@ function shuttleRoom(fr, t) {
   const u = seg(t, JUMP[0], JUMP[1]), landed = t >= JUMP[1];
   const lx = lerp(310, 640, E.io3(u)), ly = FLOOR - 230 * 4 * u * (1 - u);
   const tenseL = ss(t, 23.5, 23.95) * (1 - ss(t, JUMP[1], JUMP[1] + .7));
-  dog(fr, lx + tenseL * Math.sin(t * 32) * (u > 0 && u < 1 ? 0 : 1.4), ly, 1.12, {
+  dog(fr, lx + tenseL * Math.sin(t * 32) * (u > 0 && u < 1 ? 0 : 1.4), ly, 1.28, {
     tense: Math.max(tenseL, u > 0 && u < 1 ? 1 : 0),
     ext: Math.sin(Math.PI * u),
     rot: (u > 0 && u < 1 ? lerp(-.28, .24, u) : 0),
     wag: landed ? Math.sin((t - JUMP[1]) * 8) : 0, dir: 1
   });
   const lie = E.io3(seg(t, 27.85, 29.55)), tenseR = ss(t, 23.5, 23.95) * (1 - lie);
-  dog(fr, 1605 - tenseR * Math.sin(t * 32) * 1.4, FLOOR, 1.12, { tense: tenseR, lie, dir: -1 });
-  plaque(fr, LX, '能关掉', GOLD, ss(t, 23.15, 23.7));
-  plaque(fr, RX, '关不掉', BLUE, ss(t, 23.15, 23.7));
+  dog(fr, 1605 - tenseR * Math.sin(t * 32) * 1.4, FLOOR, 1.28, { tense: tenseR, lie, dir: -1 });
+  plaque(fr, 268, '能关掉', GOLD, ss(t, 23.15, 23.7));
+  plaque(fr, 1652, '关不掉', BLUE, ss(t, 23.15, 23.7));
   const n = ss(t, 29.85, 30.4);
   if (n > 0) {
     fr.text('8 只里，0 只放弃', LX, 748, { font: 'sansh', size: 36, color: GOLD, a: n, shadow: .7 });
@@ -225,9 +234,9 @@ function shuttleRoom(fr, t) {
 const cam = (fr, fx, fy, sx, sy, z, fn) => fr.g({ at: [sx, sy], s: z }, () => fr.g({ at: [-fx, -fy] }, fn));
 const SHOTS = [
   [0,     T.s2, (fr, t) => cam(fr, 960, 430, 960, 440, lerp(1.00, 1.06, seg(t, 0, T.s2)), () => harnessRoom(fr, t))],
-  [T.s2,  T.s3, (fr, t) => cam(fr, 960, 360, 960, 400, lerp(1.10, 1.16, seg(t, T.s2, T.s3)), () => harnessRoom(fr, t))],
-  [T.s3,  T.s4, (fr, t) => cam(fr, 460, 420, 960, 450, lerp(1.18, 1.24, seg(t, T.s3, T.s4)), () => harnessRoom(fr, t))],
-  [T.s4,  T.s5, (fr, t) => cam(fr, 960, 420, 960, 440, lerp(1.16, 1.22, seg(t, T.s4, T.s5)), () => harnessRoom(fr, t))],
+  [T.s2,  T.s3, (fr, t) => cam(fr, 960, 400, 960, 420, lerp(1.08, 1.14, seg(t, T.s2, T.s3)), () => harnessRoom(fr, t))],
+  [T.s3,  T.s4, (fr, t) => cam(fr, 560, 430, 960, 450, lerp(1.36, 1.46, seg(t, T.s3, T.s4)), () => harnessRoom(fr, t))],
+  [T.s4,  T.s5, (fr, t) => cam(fr, 960, 420, 960, 440, lerp(1.18, 1.24, seg(t, T.s4, T.s5)), () => harnessRoom(fr, t))],
   [T.s5,  T.s6, (fr, t) => cam(fr, 960, 430, 960, 430, lerp(1.00, 1.03, seg(t, T.s5, T.s6)), () => harnessRoom(fr, t))],
   [T.s6,  T.s7, (fr, t) => cam(fr, 960, 460, 960, 470, lerp(1.06, 1.12, seg(t, T.s6, T.s7)), () => shuttleRoom(fr, t))],
   [T.s7,  T.s8, (fr, t) => cam(fr, 960, 500, 960, 480, lerp(1.14, 1.20, seg(t, T.s7, T.s8)), () => shuttleRoom(fr, t))],
@@ -240,11 +249,8 @@ function overlay(fr, t) {
   fr.text('塞利格曼 · 梅尔', 240, 90, { font: 'sans', size: 28, color: '#B9AFA0', align: 'l', a: a1 * ss(t, .75, 1.2), shadow: .6 });
   const a2 = ss(t, 4.9, 5.5) * (1 - ss(t, 8.2, 8.65));
   fr.text('示意：真实实验里，警报是脚底的电击', 110, 88, { font: 'sans', size: 28, color: '#E4D9C4', align: 'l', a: a2, shadow: .7 });
-  const a3 = ss(t, 23.25, 23.75) * (1 - ss(t, 26.5, 26.95));
-  fr.text('第二天', 110, 88, { font: 'sansh', size: 40, color: GOLD, align: 'l', a: a3, shadow: .6 });
-  fr.text('新房间', 250, 90, { font: 'sans', size: 28, color: '#B9AFA0', align: 'l', a: a3, shadow: .6 });
   const a8 = ss(t, 31.75, 32.3);
-  fr.text('Seligman & Maier, 1967', 110, 88, { font: 'latini', size: 28, color: '#C9C0B0', align: 'l', a: a8, shadow: .6 });
+  fr.text('Seligman & Maier, 1967', 1810, 88, { font: 'latini', size: 26, color: '#C9C0B0', align: 'r', a: a8, shadow: .6 });
 }
 
 VK.film({
